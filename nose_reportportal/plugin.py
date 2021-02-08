@@ -236,9 +236,6 @@ class ReportPortalPlugin(Plugin):
             key, value = parameter.split(":")
             attributes.append({"key": key, "value": value, "system": False})
 
-        with open("/tmp/attributes.txt", "w") as content:
-            content.write(str(attributes))
-
         return attributes
 
     def _restore_stdout(self):
