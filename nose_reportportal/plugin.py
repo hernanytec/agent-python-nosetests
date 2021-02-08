@@ -13,6 +13,7 @@
 #  limitations under the License.
 import os
 import sys
+
 if sys.version_info.major == 2:
     import ConfigParser as configparser
     from StringIO import StringIO
@@ -43,11 +44,15 @@ LogCapture.enabled = False
 
 class RPNoseLogHandler(MyMemoryHandler):
     def __init__(self, extended_filters=None):
-        logformat = '%(name)s: %(levelname)s: %(message)s'
+        logformat = "%(name)s: %(levelname)s: %(message)s"
         logdatefmt = None
-        filters = ['-nose', '-reportportal_client.service_async',
-                   '-reportportal_client.service', '-nose_reportportal.plugin',
-                   '-nose_reportportal.service']
+        filters = [
+            "-nose",
+            "-reportportal_client.service_async",
+            "-reportportal_client.service",
+            "-nose_reportportal.plugin",
+            "-nose_reportportal.service",
+        ]
         if extended_filters:
             filters.extend(extended_filters)
         super(RPNoseLogHandler, self).__init__(logformat, logdatefmt, filters)
@@ -71,43 +76,52 @@ class ReportPortalPlugin(Plugin):
         Add options to command line.
         """
         super(ReportPortalPlugin, self).options(parser, env)
-        parser.add_option('--rp-config-file',
-                          action='store',
-                          default=env.get('NOSE_RP_CONFIG_FILE'),
-                          dest='rp_config',
-                          help='config file path')
+        parser.add_option(
+            "--rp-config-file",
+            action="store",
+            default=env.get("NOSE_RP_CONFIG_FILE"),
+            dest="rp_config",
+            help="config file path",
+        )
 
-        parser.add_option('--rp-launch',
-                          action='store',
-                          default=None,
-                          dest='rp_launch',
-                          help='postfix of launch name in report portal')
+        parser.add_option(
+            "--rp-launch",
+            action="store",
+            default=None,
+            dest="rp_launch",
+            help="postfix of launch name in report portal",
+        )
 
-        parser.add_option('--rp-mode',
-                          action='store',
-                          default="DEFAULT",
-                          dest='rp_mode',
-                          help='level of logging')
+        parser.add_option(
+            "--rp-mode",
+            action="store",
+            default="DEFAULT",
+            dest="rp_mode",
+            help="level of logging",
+        )
 
-        parser.add_option('--rp-launch-description',
-                          action='store',
-                          default="",
-                          dest='rp_launch_description',
-                          help='description of a launch')
+        parser.add_option(
+            "--rp-launch-description",
+            action="store",
+            default="",
+            dest="rp_launch_description",
+            help="description of a launch",
+        )
 
-        parser.add_option('--ignore-loggers',
-                          action='store',
-                          default=[],
-                          dest='ignore_loggers',
-                          help='logger filter')
-
+        parser.add_option(
+            "--ignore-loggers",
+            action="store",
+            default=[],
+            dest="ignore_loggers",
+            help="logger filter",
+        )
 
     def configure(self, options, conf):
         """
         Configure plugin.
         """
         try:
-            self.status.pop('active')
+            self.status.pop("active")
         except KeyError:
             pass
         super(ReportPortalPlugin, self).configure(options, conf)
@@ -118,12 +132,12 @@ class ReportPortalPlugin(Plugin):
             self.rp_config = options.rp_config
             config = configparser.ConfigParser(
                 defaults={
-                    'rp_uuid': '',
-                    'rp_endpoint': '',
-                    'rp_project': '',
-                    'rp_launch': '{}',
-                    'rp_launch_tags': '',
-                    'rp_launch_description': ''
+                    "rp_uuid": "",
+                    "rp_endpoint": "",
+                    "rp_project": "",
+                    "rp_launch": "{}",
+                    "rp_launch_tags": "",
+                    "rp_launch_description": "",
                 }
             )
             config.read(self.rp_config)
@@ -138,9 +152,15 @@ class ReportPortalPlugin(Plugin):
                     elif "type=component" in options.attr:
                         slaunch = "(component tests)"
 
-            self.rp_mode = options.rp_mode if options.rp_mode in ("DEFAULT", "DEBUG") else "DEFAULT"
+            self.rp_mode = (
+                options.rp_mode
+                if options.rp_mode in ("DEFAULT", "DEBUG")
+                else "DEFAULT"
+            )
 
-            if options.ignore_loggers and isinstance(options.ignore_loggers, basestring):
+            if options.ignore_loggers and isinstance(
+                options.ignore_loggers, basestring
+            ):
                 self.filters = [x.strip() for x in options.ignore_loggers.split(",")]
 
             self.clear = True
@@ -151,7 +171,11 @@ class ReportPortalPlugin(Plugin):
                 self.rp_project = config.get("base", "rp_project")
                 self.rp_launch = config.get("base", "rp_launch").format(slaunch)
                 self.rp_launch_tags = config.get("base", "rp_launch_tags")
-                self.rp_launch_description = options.rp_launch_description or config.get("base", "rp_launch_description")
+                self.rp_launch_attributes = config.get("base", "rp_launch_attributes")
+                self.rp_launch_description = (
+                    options.rp_launch_description
+                    or config.get("base", "rp_launch_description")
+                )
 
     def setupLoghandler(self):
         # setup our handler with root logger
@@ -170,7 +194,7 @@ class ReportPortalPlugin(Plugin):
         root_logger.addHandler(self.handler)
         # Also patch any non-propagating loggers in the tree
         for logger in logging.Logger.manager.loggerDict.values():
-            if not getattr(logger, 'propagate', True) and hasattr(logger, "addHandler"):
+            if not getattr(logger, "propagate", True) and hasattr(logger, "addHandler"):
                 for handler in logger.handlers[:]:
                     if isinstance(handler, RPNoseLogHandler):
                         logger.handlers.remove(handler)
@@ -185,19 +209,37 @@ class ReportPortalPlugin(Plugin):
         """
         self.service = NoseServiceClass()
 
-        self.service.init_service(endpoint=self.rp_endpoint,
-                                  project=self.rp_project,
-                                  token=self.rp_uuid,
-                                  ignore_errors=False)
-
+        self.service.init_service(
+            endpoint=self.rp_endpoint,
+            project=self.rp_project,
+            token=self.rp_uuid,
+            ignore_errors=False,
+        )
 
         # Start launch.
-        self.launch = self.service.start_launch(name=self.rp_launch,
-                                                description=self.rp_launch_description,
-                                                mode=self.rp_mode)
+        self.launch = self.service.start_launch(
+            name=self.rp_launch,
+            description=self.rp_launch_description,
+            mode=self.rp_mode,
+            attributes=self._split_attributes(self.rp_launch_attributes),
+        )
 
         self.handler = RPNoseLogHandler(self.filters if self.filters else None)
         self.setupLoghandler()
+
+    def _split_attributes(self, raw_attributes):
+        attributes = []
+
+        raw_attributes = raw_attributes or {}
+
+        for parameter in raw_attributes.split(";"):
+            key, value = parameter.split(":")
+            attributes.append({"key": key, "value": value, "system": False})
+
+        with open("/tmp/attributes.txt", "w") as content:
+            content.write(str(attributes))
+
+        return attributes
 
     def _restore_stdout(self):
         """Restore stdout.
@@ -266,7 +308,9 @@ class ReportPortalPlugin(Plugin):
         test.errors = []
 
         test.errors.append(value)
-        test.errors.append(str(etype.__name__) + ":\n" + "".join(traceback.format_tb(tb)))
+        test.errors.append(
+            str(etype.__name__) + ":\n" + "".join(traceback.format_tb(tb))
+        )
 
     def _filterErrorForSkip(self, err):
         if isinstance(err, tuple) and isclass(err[0]):
@@ -280,7 +324,7 @@ class ReportPortalPlugin(Plugin):
                 return True
         return False
 
-    def addError(self, test,  err):
+    def addError(self, test, err):
         """Called when a test raises an uncaught exception. DO NOT return a
         value unless you want to stop other plugins from seeing that the
         test has raised an error.
@@ -369,11 +413,9 @@ class ReportPortalPlugin(Plugin):
         # Python 3's StringIO objects don't support setting encoding or errors
         # directly and they're already set to None.  So if the attributes
         # already exist, skip adding them.
-        if (not hasattr(self._buf, 'encoding') and
-                hasattr(sys.stdout, 'encoding')):
+        if not hasattr(self._buf, "encoding") and hasattr(sys.stdout, "encoding"):
             self._buf.encoding = sys.stdout.encoding
-        if (not hasattr(self._buf, 'errors') and
-                hasattr(sys.stdout, 'errors')):
+        if not hasattr(self._buf, "errors") and hasattr(sys.stdout, "errors"):
             self._buf.errors = sys.stdout.errors
         sys.stdout = self._buf
 
@@ -390,7 +432,7 @@ class ReportPortalPlugin(Plugin):
     def addCaptureToErr(self, ev, output):
         ev = exc_to_unicode(ev)
         output = force_unicode(output)
-        return u'\n'.join([ev, output])
+        return u"\n".join([ev, output])
 
     def stopTest(self, test):
         """Called after each test is run. DO NOT return a value unless
@@ -403,24 +445,24 @@ class ReportPortalPlugin(Plugin):
         test.capturedLogging = self.formatLogRecords()
 
         if test.capturedOutput:
-            try: 
+            try:
                 self.service.post_log(safe_str(test.capturedOutput))
             except Exception:
-                log.exception('Unexpected error during sending capturedOutput.')
+                log.exception("Unexpected error during sending capturedOutput.")
 
         if test.capturedLogging:
             for x in test.capturedLogging:
-                try: 
+                try:
                     self.service.post_log(safe_str(x))
                 except Exception:
-                    log.exception('Unexpected error during sending capturedLogging.')
+                    log.exception("Unexpected error during sending capturedLogging.")
 
         if test.errors:
-            try: 
+            try:
                 self.service.post_log(safe_str(test.errors[0]))
                 self.service.post_log(safe_str(test.errors[1]), loglevel="ERROR")
             except Exception:
-                log.exception('Unexpected error during sending errors.')
+                log.exception("Unexpected error during sending errors.")
 
         if sys.version_info.major == 2:
             self._stop_test_2(test)

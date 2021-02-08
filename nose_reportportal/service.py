@@ -40,11 +40,10 @@ class Singleton(type):
 
 
 class NoseServiceClass(with_metaclass(Singleton, object)):
-
     def __init__(self):
         self.rp = None
         try:
-            pkg_resources.get_distribution('reportportal_client >= 3.2.0')
+            pkg_resources.get_distribution("reportportal_client >= 3.2.0")
             self.rp_supports_parameters = True
         except pkg_resources.VersionConflict:
             self.rp_supports_parameters = False
@@ -52,17 +51,31 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
         self.ignore_errors = True
         self.ignored_tags = []
 
-        self._loglevels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR')
+        self._loglevels = ("TRACE", "DEBUG", "INFO", "WARN", "ERROR")
 
-    def init_service(self, endpoint, project, token, ignore_errors=True,
-                     ignored_tags=[], log_batch_size=20, queue_get_timeout=5, retries=0):
+    def init_service(
+        self,
+        endpoint,
+        project,
+        token,
+        ignore_errors=True,
+        ignored_tags=[],
+        log_batch_size=20,
+        queue_get_timeout=5,
+        retries=0,
+    ):
         if self.rp is None:
             self.ignore_errors = ignore_errors
             if self.rp_supports_parameters:
-                self.ignored_tags = list(set(ignored_tags).union({'parametrize'}))
+                self.ignored_tags = list(set(ignored_tags).union({"parametrize"}))
             else:
                 self.ignored_tags = ignored_tags
-            log.debug('ReportPortal - Init service: endpoint=%s, project=%s, uuid=%s', endpoint, project, token)
+            log.debug(
+                "ReportPortal - Init service: endpoint=%s, project=%s, uuid=%s",
+                endpoint,
+                project,
+                token,
+            )
             self.rp = ReportPortalService(
                 endpoint=endpoint,
                 project=project,
@@ -79,22 +92,22 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
 
             self.issue_types = self.get_issue_types()
         else:
-            log.debug('The pytest is already initialized')
+            log.debug("The pytest is already initialized")
         return self.rp
 
-    def start_launch(self, name,
-                     mode=None,
-                     tags=None,
-                     description=None):
+    def start_launch(
+        self, name, mode=None, tags=None, description=None, attributes=None
+    ):
         if self.rp is None:
             return
 
         sl_pt = {
-            'name': name,
-            'start_time': timestamp(),
-            'description': description,
-            'mode': mode,
-            'tags': tags,
+            "name": name,
+            "start_time": timestamp(),
+            "description": description,
+            "mode": mode,
+            "tags": tags,
+            "attributes": attributes,
         }
         self.rp.start_launch(**sl_pt)
 
@@ -124,10 +137,10 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
 
         self.post_log(status)
         fta_rq = {
-            'item_id': test_item,
-            'end_time': timestamp(),
-            'status': status,
-            'issue': issue,
+            "item_id": test_item,
+            "end_time": timestamp(),
+            "status": status,
+            "issue": issue,
         }
 
         self.rp.finish_test_item(**fta_rq)
@@ -137,10 +150,7 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
             return
 
         # To finish launch session str parameter is needed
-        fl_rq = {
-            'end_time': timestamp(),
-            'status': status,
-        }
+        fl_rq = {"end_time": timestamp(), "status": status}
         self.rp.finish_launch(**fl_rq)
 
     def terminate_service(self, nowait=False):
@@ -148,20 +158,23 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
             self.rp.terminate(nowait)
             self.rp = None
 
-    def post_log(self, message, loglevel='INFO', attachment=None):
+    def post_log(self, message, loglevel="INFO", attachment=None):
         if self.rp is None:
             return
 
         if loglevel not in self._loglevels:
-            log.warning('Incorrect loglevel = %s. Force set to INFO. '
-                        'Available levels: %s.', loglevel, self._loglevels)
-            loglevel = 'INFO'
+            log.warning(
+                "Incorrect loglevel = %s. Force set to INFO. " "Available levels: %s.",
+                loglevel,
+                self._loglevels,
+            )
+            loglevel = "INFO"
 
         sl_rq = {
-            'time': timestamp(),
-            'message': message,
-            'level': loglevel,
-            'attachment': attachment,
+            "time": timestamp(),
+            "message": message,
+            "level": loglevel,
+            "attachment": attachment,
         }
         self.rp.log(**sl_rq)
 
@@ -171,7 +184,16 @@ class NoseServiceClass(with_metaclass(Singleton, object)):
         if not self.project_settings:
             return issue_types
 
-        for item_type in ("AUTOMATION_BUG", "PRODUCT_BUG", "SYSTEM_ISSUE", "NO_DEFECT", "TO_INVESTIGATE"):
+        if "subTypes" not in self.project_settings:
+            return issue_types
+
+        for item_type in (
+            "AUTOMATION_BUG",
+            "PRODUCT_BUG",
+            "SYSTEM_ISSUE",
+            "NO_DEFECT",
+            "TO_INVESTIGATE",
+        ):
             for item in self.project_settings["subTypes"][item_type]:
                 issue_types[item["shortName"]] = item["locator"]
 
