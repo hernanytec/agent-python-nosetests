@@ -116,6 +116,14 @@ class ReportPortalPlugin(Plugin):
             help="logger filter",
         )
 
+        parser.add_option(
+            "--rp-log-launch-id",
+            action="store_true",
+            dest="log_launch_id",
+            default=False,
+            help="log lauch id after sent all report output",
+        )
+
     def configure(self, options, conf):
         """
         Configure plugin.
@@ -157,6 +165,8 @@ class ReportPortalPlugin(Plugin):
                 if options.rp_mode in ("DEFAULT", "DEBUG")
                 else "DEFAULT"
             )
+
+            self.log_launch_id = options.log_launch_id
 
             if options.ignore_loggers and isinstance(
                 options.ignore_loggers, basestring
@@ -261,6 +271,9 @@ class ReportPortalPlugin(Plugin):
 
         # Finish launch.
         self.service.finish_launch()
+
+        if(self.log_launch_id):
+            print('Launch ID ReportPortal: {}'.format(self.service.rp.get_launch_ui_url()))
 
         # Due to async nature of the service we need to call terminate() method which
         # ensures all pending requests to server are processed.
