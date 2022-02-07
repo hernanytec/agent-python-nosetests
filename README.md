@@ -60,7 +60,9 @@ If you like to override some of parameters above from command line, or from CI e
 
 `--rp-launch-description` to change description of a launch
 
-`--ignore-loggers` tto ignore external loggers and not send them in report portal. Specify which statements to filter. If the output is too verbose, use this option to filter out needless output.
+`--ignore-loggers` to ignore external loggers and not send them in report portal. Specify which statements to filter. If the output is too verbose, use this option to filter out needless output.
+
+`--rp-log-launch-id` to print launch ui url when finalize. Default value is `False`.
 
 Example:
 
