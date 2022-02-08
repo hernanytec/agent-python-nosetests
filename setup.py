@@ -8,7 +8,7 @@ def read_file(fname):
         return f.read()
 
 
-version = "1.0.1"
+version = "1.0.6"
 tar_url = "https://github.com/reportportal/agent-python-nosetests"
 
 
@@ -16,7 +16,7 @@ requirements = ["reportportal-client~=5.0", "nose>=1.3.0"]
 
 
 setup(
-    name="nose-reportportal",
+    name="custom-nose-reportportal",
     version=version,
     description="Agent for Reporting results of tests to the Report Portal",
     long_description=read_file("README.md"),
