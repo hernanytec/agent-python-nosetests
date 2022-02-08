@@ -70,6 +70,7 @@ class ReportPortalPlugin(Plugin):
         self.stdout = []
         self._buf = None
         self.filters = None
+        self.log_launch_id = False
 
     def options(self, parser, env):
         """

@@ -84,6 +84,7 @@ class NoseServiceClassTestCase(unittest.TestCase):
         self.service.rp.start_launch.assert_called_once_with(
             name=name,
             start_time=time,
+            attributes=None,
             description=None,
             mode=None,
             tags=None
